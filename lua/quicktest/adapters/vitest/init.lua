@@ -30,17 +30,17 @@ local M = {
 local function escape_test_pattern(s)
   return (
     s:gsub("%(", "%\\(")
-      :gsub("%)", "%\\)")
-      :gsub("%]", "%\\]")
-      :gsub("%[", "%\\[")
-      :gsub("%*", "%\\*")
-      :gsub("%+", "%\\+")
-      :gsub("%-", "%\\-")
-      :gsub("%?", "%\\?")
-      :gsub("%$", "%\\$")
-      :gsub("%^", "%\\^")
-      :gsub("%/", "%\\/")
-      :gsub("%%s", ".*") -- Match `test.each([...])("Test %s", ...)`
+    :gsub("%)", "%\\)")
+    :gsub("%]", "%\\]")
+    :gsub("%[", "%\\[")
+    :gsub("%*", "%\\*")
+    :gsub("%+", "%\\+")
+    :gsub("%-", "%\\-")
+    :gsub("%?", "%\\?")
+    :gsub("%$", "%\\$")
+    :gsub("%^", "%\\^")
+    :gsub("%/", "%\\/")
+    :gsub("%%s", ".*") -- Match `test.each([...])("Test %s", ...)`
   )
 end
 
@@ -310,18 +310,20 @@ M.run = function(params, send)
 end
 
 -- ---@param params VitestRunParams
--- M.title = function(params)
---   local args = build_args(params)
---
---   return "Running test: " .. table.concat({ unpack(args, 2) }, " ")
--- end
+M.title = function(params)
+  local args = build_args(params)
+  args = params.opts.additional_args and vim.list_extend(args, params.opts.additional_args) or args
+  args = M.options.args and M.options.args(params.bufnr, args) or args
+
+  return "Running test: " .. table.concat({ unpack(args, 2) }, " ")
+end
 
 -- --- Handles actions to take after the test run, based on the results.
 -- ---@param params any
 -- ---@param results any
--- M.after_run = function(params, results)
---   -- Implement actions based on the results, such as updating UI or handling errors
--- end
+M.after_run = function(params, results)
+  -- Implement actions based on the results, such as updating UI or handling errors
+end
 
 --- Checks if the plugin is enabled for the given buffer.
 ---@param bufnr integer
@@ -340,16 +342,18 @@ M.is_enabled = function(bufnr, type)
       for _, ext in ipairs({ "js", "jsx", "coffee", "ts", "tsx" }) do
         if string.match(file_path, "%." .. x .. "%." .. ext .. "$") then
           is_test_file = true
+          -- goto ::lable::
           goto matched_pattern
         end
       end
     end
+    -- 这里是 lua 中 goto label
     ::matched_pattern::
   else
     is_test_file = vim.endswith(file_path, ".ts")
-      or vim.endswith(file_path, ".js")
-      or vim.endswith(file_path, ".tsx")
-      or vim.endswith(file_path, ".jsx")
+        or vim.endswith(file_path, ".js")
+        or vim.endswith(file_path, ".tsx")
+        or vim.endswith(file_path, ".jsx")
   end
 
   if M.options.is_enabled == nil then

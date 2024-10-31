@@ -9,6 +9,7 @@ local M = {}
 
 ---@alias Adapter string | "auto"
 ---@alias WinMode 'popup' | 'split' | 'auto'
+---@alias WinOpts table | nil
 ---@alias WinModeWithoutAuto 'popup' | 'split
 
 ---@class AdapterRunOpts
@@ -149,11 +150,16 @@ function M.run(adapter, params, config, opts)
 
           vim.api.nvim_buf_add_highlight(buf, -1, "DiagnosticOk", line_count - 1, 0, -1)
         end
+        ui.scroll_down(buf, -1)
+        vim.api.nvim_set_option_value('modifiable', false, { buf = buf })
       end
     end
   end
 
   for _, buf in ipairs(ui.buffers) do
+    -- 注意: 这里要放在 set_lines 写入之前开启可写
+    vim.api.nvim_set_option_value('modifiable', true, { buf = buf })
+
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, {})
 
     ui.scroll_down(buf)
@@ -172,7 +178,6 @@ function M.run(adapter, params, config, opts)
       for _, buf in ipairs(ui.buffers) do
         vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
           title,
-          "",
           "",
           "",
         })
@@ -268,12 +273,12 @@ end
 function M.prepare_and_run(config, type, mode, adapter_name, opts)
   local win_mode = mode == "auto" and M.current_win_mode(config.default_win_mode) or mode --[[@as WinModeWithoutAuto]]
   local current_buffer = api.nvim_get_current_buf()
-  local win = vim.api.nvim_get_current_win() -- Get the current active window
+  local win = vim.api.nvim_get_current_win()          -- Get the current active window
   local cursor_pos = vim.api.nvim_win_get_cursor(win) -- Get the cursor position in the window
 
   --- @type QuicktestAdapter
   local adapter = adapter_name == "auto" and get_adapter(config, type)
-    or get_adapter_by_name(config.adapters, adapter_name)
+      or get_adapter_by_name(config.adapters, adapter_name)
 
   if not adapter then
     return notify.warn("Failed to test: no suitable adapter found.")
@@ -291,7 +296,8 @@ function M.prepare_and_run(config, type, mode, adapter_name, opts)
     return notify.warn("Failed to test: " .. error .. ".")
   end
 
-  M.try_open_win(win_mode)
+  -- M.try_open_win(win_mode, { title = adapter.title(params) })
+  M.try_open_win(win_mode, { title = ' ' .. adapter.name .. ' ' })
 
   M.run(adapter, params, config, opts)
 end
@@ -341,8 +347,9 @@ function M.current_win_mode(default_mode)
 end
 
 ---@param mode WinModeWithoutAuto
-function M.try_open_win(mode)
-  ui.try_open_win(mode)
+---@param opts WinOpts | nil
+function M.try_open_win(mode, opts)
+  ui.try_open_win(mode, opts)
   for _, buf in ipairs(ui.buffers) do
     ui.scroll_down(buf)
   end

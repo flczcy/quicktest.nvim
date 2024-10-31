@@ -9,11 +9,11 @@ local api = vim.api
 local split_buf = api.nvim_create_buf(false, true)
 local popup_buf = api.nvim_create_buf(false, true)
 
-vim.api.nvim_buf_set_option(split_buf, "undolevels", -1)
-vim.api.nvim_buf_set_option(popup_buf, "undolevels", -1)
+vim.api.nvim_set_option_value("undolevels", -1, { buf = split_buf })
+vim.api.nvim_set_option_value("undolevels", -1, { buf = popup_buf })
 
-vim.api.nvim_buf_set_option(split_buf, "filetype", "quicktest-output")
-vim.api.nvim_buf_set_option(popup_buf, "filetype", "quicktest-output")
+vim.api.nvim_set_option_value("filetype", "quicktest-output", { buf = split_buf })
+vim.api.nvim_set_option_value("filetype", "quicktest-output", { buf = popup_buf })
 
 --- @type NuiSplit | nil
 local split
@@ -24,18 +24,46 @@ M.buffers = { split_buf, popup_buf }
 M.is_split_opened = false
 M.is_popup_opened = false
 
-local function open_popup()
+---@param opts WinOpts
+local function open_popup(opts)
+  opts = opts or {}
+  opts.text = opts.text or {}
   popup = Popup({
     enter = true,
+    zindex = 50,
     bufnr = popup_buf,
     focusable = true,
     border = {
       style = "rounded",
+      text = {
+        top = opts.title or opts.text.title,
+        top_align = opts.text.top_align or "center",
+        bottom = opts.text.bottom,
+        bottom_align = opts.text.bottom_align or "left",
+      },
     },
-    position = "50%",
+    position = {
+      row = "40%",
+      col = "50%",
+    },
     size = {
-      width = "80%",
-      height = "60%",
+      width = "70%",
+      height = "67%",
+    },
+    buf_options = {
+      readonly = false,
+      modifiable = true,
+    },
+    win_options = {
+      -- 这是设置 > 0 透明度,会导致光标下面显示弹窗背后的字符
+      winblend = 0,
+      winhighlight = table.concat({
+        'Normal:AdaptiveFloatNormal',
+        'NormalFloat:AdaptiveFloatNormal',
+        'FloatTitle:AdaptiveFloatTitle',
+        'FloatBorder:AdaptiveFloatBorder',
+      }, ','),
+      -- winhighlight = "Normal:Normal_,NormalFloat:NormalFloat_,FloatBorder:FloatBorder_,FloatTitle:FloatTitle_",
     },
   })
 
@@ -79,16 +107,18 @@ local function try_open_split()
   end
 end
 
-local function try_open_popup()
+---@param opts WinOpts
+local function try_open_popup(opts)
   if not M.is_popup_opened then
-    open_popup()
+    open_popup(opts)
   end
 end
 
 ---@param mode WinModeWithoutAuto
-function M.try_open_win(mode)
+---@param opts WinOpts
+function M.try_open_win(mode, opts)
   if mode == "popup" then
-    try_open_popup()
+    try_open_popup(opts)
   else
     try_open_split()
   end
@@ -108,7 +138,8 @@ function M.try_close_win(mode)
 end
 
 ---@param buf number
-function M.scroll_down(buf)
+---@param last number | nil
+function M.scroll_down(buf, last)
   local windows = vim.api.nvim_list_wins()
   for _, win in ipairs(windows) do
     local win_bufnr = vim.api.nvim_win_get_buf(win)
@@ -118,8 +149,11 @@ function M.scroll_down(buf)
       if line_count < 3 then
         return
       end
-
-      vim.api.nvim_win_set_cursor(win, { line_count - 2, 0 })
+      if last == -1 then
+        vim.api.nvim_win_set_cursor(win, { line_count, 0 })
+      else
+        vim.api.nvim_win_set_cursor(win, { line_count - 2, 0 })
+      end
     end
   end
 end
