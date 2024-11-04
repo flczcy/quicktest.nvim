@@ -58,14 +58,16 @@ local function open_popup(opts)
       -- 这是设置 > 0 透明度,会导致光标下面显示弹窗背后的字符
       winblend = 0,
       winhighlight = table.concat({
-        'Normal:AdaptiveFloatNormal',
-        'NormalFloat:AdaptiveFloatNormal',
-        'FloatTitle:AdaptiveFloatTitle',
-        'FloatBorder:AdaptiveFloatBorder',
+        'Normal:AdaptiveFloatNormal_',
+        'NormalFloat:AdaptiveFloatNormal_',
+        'FloatTitle:AdaptiveFloatTitle_',
+        'FloatBorder:AdaptiveFloatBorder_',
       }, ','),
       -- winhighlight = "Normal:Normal_,NormalFloat:NormalFloat_,FloatBorder:FloatBorder_,FloatTitle:FloatTitle_",
     },
   })
+
+  vim.api.nvim_set_option_value("wrap", true, { win = popup.winid })
 
   popup:on(event.WinClosed, function()
     M.is_popup_opened = false
@@ -80,14 +82,34 @@ local function open_popup(opts)
   return popup
 end
 
-local function open_split()
+---@param mode WinModeWithoutAuto
+local function open_split(mode)
+  local position = ({ split = 'bottom', split_right = 'right' })[mode]
+  local size = ({ bottom = '30%', right = 80 })
   split = Split({
     relative = "editor",
-    position = "bottom",
-    size = "30%",
+    position = position,
+    size = size,
     enter = false,
+    win_options = {
+      -- 这是设置 > 0 透明度,会导致光标下面显示弹窗背后的字符
+      winblend = 0,
+      winhighlight = table.concat({
+        'Normal:AdaptiveFloatNormal_',
+        'NormalFloat:AdaptiveFloatNormal_',
+        'FloatTitle:AdaptiveFloatTitle_',
+        'FloatBorder:AdaptiveFloatBorder_',
+      }, ','),
+      -- winhighlight = "Normal:Normal_,NormalFloat:NormalFloat_,FloatBorder:FloatBorder_,FloatTitle:FloatTitle_",
+    },
   })
   split.bufnr = split_buf
+
+  if position == 'right' then
+    vim.api.nvim_set_option_value("wrap", true, { win = split.winid })
+  else
+    vim.api.nvim_set_option_value("wrap", false, { win = split.winid })
+  end
 
   split:on(event.WinClosed, function()
     M.is_split_opened = false
@@ -101,9 +123,10 @@ local function open_split()
   return split
 end
 
-local function try_open_split()
+---@param mode WinModeWithoutAuto
+local function try_open_split(mode)
   if not M.is_split_opened then
-    open_split()
+    open_split(mode)
   end
 end
 
@@ -120,7 +143,7 @@ function M.try_open_win(mode, opts)
   if mode == "popup" then
     try_open_popup(opts)
   else
-    try_open_split()
+    try_open_split(mode)
   end
 end
 

@@ -18,7 +18,8 @@ function ColoredPrinter:setup_highlight_groups()
     ["30"] = "Black",
     ["31"] = "Red",
     ["32"] = "Green",
-    ["33"] = "Yellow",
+    -- ["33"] = "Yellow",
+    ["33"] = "Orange",
     ["34"] = "Blue",
     ["35"] = "Magenta",
     ["36"] = "Cyan",
@@ -26,7 +27,8 @@ function ColoredPrinter:setup_highlight_groups()
     ["90"] = "Grey",
     ["91"] = "Red",
     ["92"] = "Green",
-    ["93"] = "Yellow",
+    -- ["93"] = "Yellow",
+    ["93"] = "Orange",
     ["94"] = "Blue",
     ["95"] = "Magenta",
     ["96"] = "Cyan",
@@ -35,7 +37,8 @@ function ColoredPrinter:setup_highlight_groups()
 
   for code, color in pairs(basic_colors) do
     local group_name = "QuicktestAnsiColor_" .. code
-    vim.cmd(string.format("highlight %s ctermfg=%s guifg=%s", group_name, color:lower(), color))
+    -- vim.cmd(string.format("highlight %s ctermfg=%s guifg=%s", group_name, color:lower(), color))
+    vim.cmd(string.format("highlight %s guifg=%s", group_name, color))
 
     self.color_groups[code] = group_name
   end

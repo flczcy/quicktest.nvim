@@ -8,9 +8,9 @@ local colorized_printer = require("quicktest.colored_printer")
 local M = {}
 
 ---@alias Adapter string | "auto"
----@alias WinMode 'popup' | 'split' | 'auto'
+---@alias WinMode 'popup' | 'split' | 'auto' | 'split_right'
 ---@alias WinOpts table | nil
----@alias WinModeWithoutAuto 'popup' | 'split
+---@alias WinModeWithoutAuto 'popup' | 'split' | 'split_right'
 
 ---@class AdapterRunOpts
 ---@field additional_args string[]?
@@ -362,21 +362,21 @@ end
 
 ---@param mode WinModeWithoutAuto
 function M.toggle_win(mode)
-  if mode == "split" then
-    if ui.is_split_opened then
-      ui.try_close_win("split")
+  if mode == "popup" then
+    if ui.is_popup_opened then
+      ui.try_close_win("popup")
     else
-      ui.try_open_win("split")
+      ui.try_open_win("popup")
 
       for _, buf in ipairs(ui.buffers) do
         ui.scroll_down(buf)
       end
     end
   else
-    if ui.is_popup_opened then
-      ui.try_close_win("popup")
+    if ui.is_split_opened then
+      ui.try_close_win(mode)
     else
-      ui.try_open_win("popup")
+      ui.try_open_win(mode)
 
       for _, buf in ipairs(ui.buffers) do
         ui.scroll_down(buf)
